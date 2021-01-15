@@ -4,7 +4,9 @@ GUI for tiling and mosaicing rasters
 An executable, RasterGuru.exe is available under Releases.  This is a standalone file that can be used to run the application.
 
 There are two functions:
+
 Make Tiles
+
 Make Mosaic
 
 When making tiles, the height/width slider can be modified to change the height and width (in pixels) of the output tiles.
