@@ -16,7 +16,9 @@ The resolution slider should stay at 1 if you want to retain the same resolution
 For example, if your original image had 10 meter resolution, upping the resolution slider to 2 would output images with 20 meter resolution, upping to 3 would give it 30 meter resolution, and so on.
 
 To run in Anaconda, the requirements are pyqt5, gdal, python 3.7.
+
 conda install gdal
+
 pip install pyqt5
 
 The file to run is Lundine_tile_mosaic_gui.py.
