@@ -21,11 +21,15 @@ Convert csv points to kml will take a csv with columns 'name', 'lat', 'long' and
 
 Coming soon: Raster Differencing, Constructing Multiband Rasters.
 
-To run in Anaconda, the requirements are pyqt5, gdal, python 3.7.
+To run in Anaconda, the requirements are python 3.7, pyqt5, gdal, pandas, simplekml.
 
 conda install gdal
 
 pip install pyqt5
+
+conda install pandas
+
+pip install simplekml
 
 The file to run is Lundine_tile_mosaic_gui.py.
 
