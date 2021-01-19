@@ -8,6 +8,7 @@ import gdal_retile
 import gdal_merge
 import numpy
 import six
+import gdal_functions_app
 
 
 ## Contains all of the widgets for the GUI   
@@ -22,44 +23,201 @@ class Window(QMainWindow):
         screenWidth = sizeObject.width()
         global screenHeight
         screenHeight = sizeObject.height()
+        global bw1
+        bw1 = int(screenWidth/15)
+        global bw2
+        bw2 = int(screenWidth/50)
+        global bh1
+        bh1 = int(screenHeight/15)
+        global bh2
+        bh2 = int(screenHeight/20)
         self.setGeometry(50, 50, 10 + int(screenWidth/2), 10 + int(screenHeight/2))
         self.setWindowTitle("Raster Guru")
         self.home()
     def home(self):
-        mosaic = QPushButton('Make Mosaic', self)
-        mosaic.resize(200,100)
-        mosaic.move(300,100)
-        resolution = QSpinBox(self)
+
+        self.scroll = QScrollArea()             # Scroll Area which contains the widgets, set as the centralWidget
+        self.widget = QWidget()                 # Widget that contains the collection of Vertical Box
+        self.vbox = QGridLayout()             # The Vertical Box that contains the Horizontal Boxes of  labels and buttons
+        self.widget.setLayout(self.vbox)
+        
+        mosaic = QPushButton('Make Mosaic')
+        self.vbox.addWidget(mosaic, 3, 0)
+
+        resolutionLab = QLabel('Resolution (pixels)')
+        self.vbox.addWidget(resolutionLab, 2, 1)
+        
+        resolution = QSpinBox()
         resolution.setMinimum(1)
         resolution.setMaximum(500)
         resolution.setValue(1)
-        resolution.move(300,220)
-        resolutionLab = QLabel('Resolution (pixels)', self)
-        resolutionLab.resize(200,25)
-        resolutionLab.move(300,200)
+        self.vbox.addWidget(resolution, 3, 1)
         
-        tile = QPushButton('Make Tiles', self)
-        tile.resize(200,100)
+
+        
+        tile = QPushButton('Make Tiles')
         tile.move(100,100)
-        heightWidth = QSpinBox(self)
+        self.vbox.addWidget(tile, 0, 0)
+
+        heightWidthLab = QLabel('Height and Width (pixels)')
+        self.vbox.addWidget(heightWidthLab, 0, 1)
+        
+        heightWidth = QSpinBox()
         heightWidth.setMinimum(10)
         heightWidth.setMaximum(5000)
         heightWidth.setValue(300)
-        heightWidth.move(100,220)
-        heightWidthLab = QLabel('Height and Width (pixels)', self)
-        heightWidthLab.resize(200,25)
-        heightWidthLab.move(100,200)
-        overlap = QSpinBox(self)
-        overlap.move(100,275)
+        self.vbox.addWidget(heightWidth, 1, 1)
+
+        overlapLab = QLabel('Overlap (pixels)')
+        self.vbox.addWidget(overlapLab, 0, 2)
+        
+        overlap = QSpinBox()
         overlap.setMinimum(0)
         overlap.setMaximum(5000)
-        overlapLab = QLabel('Overlap (pixels)', self)
-        overlapLab.move(100,250)
-        overlapLab.resize(200,25)
+        self.vbox.addWidget(overlap, 1, 2)
+
+
+        converter = QPushButton('Convert Rasters')
+        self.vbox.addWidget(converter, 4, 0)
+        fromType = QComboBox()
+        toType = QComboBox()
+        fromTypes = ['.tif', '.img']
+        toTypes = ['.tif', '.jpeg', '.img', '.png', '.npy']
+        for t in fromTypes:
+            fromType.addItem(t)
+        for t in toTypes:
+            toType.addItem(t)
+        toLab = QLabel('To')
+        
+        self.vbox.addWidget(fromType, 4, 1)
+        self.vbox.addWidget(toLab, 4, 2)
+        self.vbox.addWidget(toType, 4, 3)
+
+##        multiband = QPushButton('Make Multiband Rasters')
+##        self.vbox.addWidget(multiband, 6,0)
+##
+##        numBandsLab = QLabel('Bands')
+##        self.vbox.addWidget(numBandsLab, 5, 1)
+##        numBands = QSpinBox()
+##        numBands.setValue(3)
+##        numBands.setMinimum(2)
+##        numBands.setMaximum(15)
+##        self.vbox.addWidget(numBands, 6, 1)
+
+        slope = QPushButton('Slope')
+        self.vbox.addWidget(slope, 7, 0)
+
+        aspect = QPushButton('Aspect')
+        self.vbox.addWidget(aspect, 8, 0)
+
+        hillshade = QPushButton('Hillshade')
+        self.vbox.addWidget(hillshade, 9, 0)
+
+        roughness = QPushButton('Roughness')
+        self.vbox.addWidget(roughness, 10, 0)
+
+##        subtract = QPushButton('Raster Difference')
+##        self.vbox.addWidget(subtract, 11, 0)
+##
+##        firstLabel = QLabel('Full Filepath')
+##        first = QLineEdit()
+##
+##        secondLabel = QLabel('Full Filepath')
+##        second = QLineEdit()
+##
+##        minus = QLabel('minus')
+##
+##        maskLabel = QLabel('Full Filepath to Shapefile Mask (optional)')
+##        mask = QLineEdit()
+##
+##        densityLabel = QLabel('Density of Material')
+##        density = QLineEdit()
+##
+##        self.vbox.addWidget(firstLabel, 11, 1)
+##        self.vbox.addWidget(first,12,1)
+##        self.vbox.addWidget(minus,12,2)
+##        self.vbox.addWidget(secondLabel,11,3)
+##        self.vbox.addWidget(second,12,3)
+##        self.vbox.addWidget(maskLabel, 11,4)
+##        self.vbox.addWidget(mask, 12, 4)
+##        self.vbox.addWidget(densityLabel,11,5)
+##        self.vbox.addWidget(density,12,5)
+        
+
+        saveCoordsAndRes = QPushButton('Save raster coordinates and resolution to csv')
+        self.vbox.addWidget(saveCoordsAndRes, 13, 0)
+
+        csv_to_kml = QPushButton('Convert csv points to kml points')
+        self.vbox.addWidget(csv_to_kml,14,0)
+
+        
+        
+        
         #actions
         tile.clicked.connect(lambda: self.tileButton(heightWidth.value(), overlap.value()))
         mosaic.clicked.connect(lambda: self.mosaicButton(resolution.value()))
-        self.show()
+        slope.clicked.connect(lambda: self.demButton('slope'))
+        aspect.clicked.connect(lambda: self.demButton('aspect'))
+        hillshade.clicked.connect(lambda: self.demButton('hillshade'))
+        roughness.clicked.connect(lambda: self.demButton('roughness'))
+        saveCoordsAndRes.clicked.connect(lambda: self.saveCoordsAndResButton())
+        csv_to_kml.clicked.connect(lambda: self.csvToKmlButton())
+        converter.clicked.connect(lambda: self.converterButton(str(fromType.currentText()),str(toType.currentText())))
+        #subtract.clicked.connect(lambda: self.subtractButton(first.text(),second.text(), density.text(), mask.text()))
+                                                               
+        
+
+
+        self.scroll.setVerticalScrollBarPolicy(Qt.ScrollBarAlwaysOn)
+        self.scroll.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOn)
+        self.scroll.setWidgetResizable(False)
+        self.scroll.setWidget(self.widget)
+
+        self.setCentralWidget(self.scroll)
+
+    def converterButton(self,fromType,toType):
+        options1 = QFileDialog.Options()
+        options1 |= QFileDialog.DontUseNativeDialog
+        folderName1 = str(QFileDialog.getExistingDirectory(self, "Select Folder of Rasters"))
+        if folderName1:
+            options2 = QFileDialog.Options()
+            options2 |= QFileDialog.DontUseNativeDialog
+            folderName2 = str(QFileDialog.getExistingDirectory(self, "Select Folder to Save To"))
+            if folderName2:
+                gdal_functions_app.gdal_convert(folderName1, folderName2, fromType, toType)
+
+    def subtractButton(self,first,second, density, mask):
+        if mask != '' and density != '':
+            gdal_functions_app.gdal_difference(first,second,float(density),mask)
+        else:
+            gdal_functions_app.gdal_difference(first,second)
+        
+    def demButton(self, operation):
+        options1 = QFileDialog.Options()
+        options1 |= QFileDialog.DontUseNativeDialog
+        folderName1 = str(QFileDialog.getExistingDirectory(self, "Select Folder of Rasters"))
+        if folderName1:   
+            options2 = QFileDialog.Options()
+            options2 |= QFileDialog.DontUseNativeDialog
+            folderName2 = str(QFileDialog.getExistingDirectory(self, "Select Folder to Save To"))
+            if folderName2:
+                gdal_functions_app.gdal_dem(folderName1, folderName2, operation)
+    def saveCoordsAndResButton(self):
+        options = QFileDialog.Options()
+        options |= QFileDialog.DontUseNativeDialog
+        folderName = str(QFileDialog.getExistingDirectory(self, "Select Folder of Geotiffs"))
+        if folderName:
+            saveName = os.path.join(folderName,'coords_and_res.csv')
+            gdal_functions_app.gdal_get_coords_and_res(folderName, saveName)
+
+    def csvToKmlButton(self):
+        options = QFileDialog.Options()
+        options |= QFileDialog.DontUseNativeDialog
+        fileName, _ = QFileDialog.getOpenFileName(self,"Select csv", "","All Files (*);;Points File (*.csv)", options=options)
+        if fileName:
+            gdal_functions_app.csv_to_kml(fileName)
+            
+        
     def tileButton(self, dim, overlap):
 
         options = QFileDialog.Options()
@@ -79,12 +237,7 @@ class Window(QMainWindow):
                 tiler.TargetDir = folderName + r'/'
                 tiler.TileIndexName = os.path.splitext(os.path.basename(fileName))[0] + '_tiles_shapefile'
                 tiler.main()
-                
-                #cmd1 = 'python gdal_retile.py -ps ' + str(dim) + ' ' + str(dim) + ' -targetDir ' + folderName
-                cdm1 = '-ps ' + str(dim) + ' ' + str(dim) + ' -targetDir ' + folderName
-                cmd2 = ' -overlap ' + str(overlap) + ' ' + '-r near -tileIndex ' + os.path.splitext(os.path.basename(fileName))[0] + '_tiles'
-                cmd3 = ' -csv ' + os.path.splitext(os.path.basename(fileName))[0] + '_tiles' + ' -csvDelim , '+ fileName
-                #os.system(cmd1+cmd2+cmd3)
+
     def mosaicButton(self, res):
         def listToString(s):      
             # initialize an empty string 
@@ -111,15 +264,13 @@ class Window(QMainWindow):
                 merger.psize_x = float(res)
                 merger.psize_y = float(-1*res)
                 merger.main()
-                #cmd1 = 'python gdal_merge.py -o ' + fileName + '.tif' + ' -ps ' + str(res) + ' ' + str(res) + ' ' + filestring
-                #cmd1 = ['-o', fileName+'.tif', '-ps', str(res), str(res), filestring]
-                #gdal_merge.main(cmd1)
-                #os.system(cmd1)
+
                 
 ## Function outside of the class to run the app   
 def run():
     app = QApplication(sys.argv)
     GUI = Window()
+    GUI.show()
     sys.exit(app.exec_())
 
 ## Calling run to run the app
