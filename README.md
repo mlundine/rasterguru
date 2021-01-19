@@ -1,6 +1,8 @@
 # rasterguru
 GUI for tiling and mosaicing rasters
 
+!(GUI PIC)[https://github.com/mlundine/rasterguru/blob/master/rastergu_gui.png]
+
 An executable, RasterGuru.exe is available under Releases.  This is a standalone file that can be used to run the application.
 
 There are two functions:
