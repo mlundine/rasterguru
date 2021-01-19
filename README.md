@@ -1,5 +1,7 @@
 # rasterguru
-GUI for tiling and mosaicing rasters
+GUI for various raster tools and a few vector tools.  This GUI will develop more functions as time goes on.
+
+The rationale is to do repetitive GIS tasks quickly.
 
 ![GUI PIC](https://github.com/mlundine/rasterguru/blob/master/rastergu_gui.png)
 
