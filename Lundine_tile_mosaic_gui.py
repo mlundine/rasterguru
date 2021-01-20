@@ -132,23 +132,25 @@ class Window(QMainWindow):
 
         densityLabel = QLabel('Density of Material')
         density = QLineEdit()
-
+        
         self.vbox.addWidget(firstLabel, 11, 1)
         self.vbox.addWidget(first,12,1)
         self.vbox.addWidget(minus,12,2)
         self.vbox.addWidget(secondLabel,11,3)
         self.vbox.addWidget(second,12,3)
-##        self.vbox.addWidget(maskLabel, 11,4)
-##        self.vbox.addWidget(mask, 12, 4)
+        self.vbox.addWidget(maskLabel, 11,4)
+        self.vbox.addWidget(mask, 12, 4)
 ##        self.vbox.addWidget(densityLabel,11,5)
 ##        self.vbox.addWidget(density,12,5)
         
+        clipRaster = QPushButton('Clip Raster to Shape')
+        self.vbox.addWidget(clipRaster)
 
         saveCoordsAndRes = QPushButton('Save raster coordinates and resolution to csv')
-        self.vbox.addWidget(saveCoordsAndRes, 13, 0)
+        self.vbox.addWidget(saveCoordsAndRes, 14, 0)
 
         csv_to_kml = QPushButton('Convert csv points to kml points')
-        self.vbox.addWidget(csv_to_kml,14,0)
+        self.vbox.addWidget(csv_to_kml,15,0)
 
         
         
@@ -164,7 +166,7 @@ class Window(QMainWindow):
         csv_to_kml.clicked.connect(lambda: self.csvToKmlButton())
         converter.clicked.connect(lambda: self.converterButton(str(fromType.currentText()),str(toType.currentText())))
         subtract.clicked.connect(lambda: self.subtractButton(first.text(),second.text(), density.text(), mask.text()))
-                                                               
+        clipRaster.clicked.connect(lambda: self.clipRasterButton())                                                       
         
 
 
@@ -174,7 +176,17 @@ class Window(QMainWindow):
         self.scroll.setWidget(self.widget)
 
         self.setCentralWidget(self.scroll)
-
+    def clipRasterButton(self):
+        options = QFileDialog.Options()
+        options |= QFileDialog.DontUseNativeDialog
+        fileName, _ = QFileDialog.getOpenFileName(self,"Select raster to clip", "","All Files (*);;Geotiff (*.tif)", options=options)
+        if fileName:
+            options2 = QFileDialog.Options()
+            options2 |= QFileDialog.DontUseNativeDialog
+            fileName2, _ = QFileDialog.getOpenFileName(self,"Select shapefile", "","All Files (*);; Shapefile (*.shp)", options=options)
+            if fileName2:
+                gdal_functions_app.clipRasterToShape(fileName, fileName2)
+                
     def converterButton(self,fromType,toType):
         options1 = QFileDialog.Options()
         options1 |= QFileDialog.DontUseNativeDialog
@@ -187,8 +199,8 @@ class Window(QMainWindow):
                 gdal_functions_app.gdal_convert(folderName1, folderName2, fromType, toType)
 
     def subtractButton(self,first,second, density, mask):
-        if mask != '' and density != '':
-            gdal_functions_app.gdal_difference(first,second,float(density),mask)
+        if mask != '':
+            gdal_functions_app.gdal_difference(first,second,mask=mask)
         else:
             gdal_functions_app.gdal_difference(first,second)
         
