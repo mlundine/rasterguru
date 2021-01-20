@@ -15,11 +15,15 @@ For example, if your original image had 10 meter resolution, upping the resoluti
 
 Convert Rasters, Slope, Aspect, Hillshade, and Roughness ask for a folder containing geotiffs and a folder to save the results to.
 
+Raster Difference takes two parameters: The full filepath to the first raster, and the full filepath to the second raster. These must be typed into the text boxes.
+The operation would then be first minus second. This button will clip the first raster and resample it to match the extent and resolution of the second raster, and save this to a new geotiff.
+It will then calculate the difference and save this as difference.tif.
+
 Save raster coords and resolution asks for a folder of geotiffs and then it will save a csv with the image names, raster coordinates, and resolution.
 
 Convert csv points to kml will take a csv with columns 'name', 'lat', 'long' and then convert this to a kml.
 
-Coming soon: Raster Differencing, Constructing Multiband Rasters.
+Coming soon: Raster Differencing With Shapefile Masks, Constructing Multiband Rasters, Projecting Rasters.
 
 To run in Anaconda, the requirements are python 3.7, pyqt5, gdal, pandas, simplekml.
 
