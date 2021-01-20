@@ -53,6 +53,9 @@ It will then calculate the difference and save this as difference.tif. The optio
 
 Clip Raster to Shape will clip a raster to the bounds defined by a shapefile.  It asks for a geotiff, and then the shapefile that defines the boundaries.  This shapefile should only have one polygon.
 
+Zonal Stats asks for a shapefile containing a bunch of polygons and a raster to find mean,median,standard deviation, variance, and range from.
+It outputs a csv with these stats for each polygon in the shapefile.
+
 Save raster coords and resolution asks for a folder of geotiffs and then it will save a csv with the image names, raster coordinates, and resolution.
 
 Convert csv points to kml will take a csv with columns 'name', 'lat', 'long' and then convert this to a kml.
