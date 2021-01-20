@@ -7,7 +7,6 @@ Created on Wed Apr  8 10:37:12 2020
 import sys
 import os
 import operator
-from PIL import Image, ImageDraw
 from osgeo import gdal, gdalconst, ogr, osr
 import osgeo.gdalnumeric as gdn
 import numpy as np
