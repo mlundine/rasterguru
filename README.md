@@ -5,6 +5,38 @@ The rationale is to do repetitive GIS tasks quickly.
 
 ![GUI PIC](https://github.com/mlundine/rasterguru/blob/master/rastergu_gui.png)
 
+To run in Anaconda, the requirements are python 3.7, pyqt5, gdal, pandas, simplekml.
+
+Open up Anaconda prompt or terminal and cd to the rasterguru directory.
+
+cd wherever_you_placed_it/rasterguru
+
+Next make the environment
+
+conda env --file rasterguru.yml
+
+Now activate that environment
+
+conda activate rasterguru
+
+If you already have a Python 3 environment and just want to install the packages, here are the commands to install the needed packages:
+
+conda install gdal
+
+pip install pyqt5
+
+conda install pandas
+
+pip install simplekml
+
+The file to run is Lundine_tile_mosaic_gui.py.
+
+In the terminal, while in the rasterguru directory, you can run the GUI with the command:
+
+python Lundine_tile_mosaic_gui.py
+
+An executable, RasterGuru.exe is available under Releases.  This is a standalone file that can be used to run the Make Tiles and Make Mosaic functions on Windows machines.
+
 When making tiles, the height/width slider can be modified to change the height and width (in pixels) of the output tiles.
 If you had an original image with 10 meter resolution, setting height and width to 300 pixels would mean the ouput tiles would have a 3000mx3000m footprint.
 
@@ -27,18 +59,6 @@ Convert csv points to kml will take a csv with columns 'name', 'lat', 'long' and
 
 Coming soon: Raster Differencing With Shapefile Masks, Constructing Multiband Rasters, Projecting Rasters.
 
-To run in Anaconda, the requirements are python 3.7, pyqt5, gdal, pandas, simplekml.
 
-conda install gdal
-
-pip install pyqt5
-
-conda install pandas
-
-pip install simplekml
-
-The file to run is Lundine_tile_mosaic_gui.py.
-
-An executable, RasterGuru.exe is available under Releases.  This is a standalone file that can be used to run the Make Tiles and Make Mosaic functions on Windows machines.
 
 
