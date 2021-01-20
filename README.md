@@ -13,7 +13,7 @@ cd wherever_you_placed_it/rasterguru
 
 Next make the environment
 
-conda env --file rasterguru.yml
+conda env create --file rasterguru.yml
 
 Now activate that environment
 
