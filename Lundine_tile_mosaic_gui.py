@@ -116,28 +116,28 @@ class Window(QMainWindow):
         roughness = QPushButton('Roughness')
         self.vbox.addWidget(roughness, 10, 0)
 
-##        subtract = QPushButton('Raster Difference')
-##        self.vbox.addWidget(subtract, 11, 0)
-##
-##        firstLabel = QLabel('Full Filepath')
-##        first = QLineEdit()
-##
-##        secondLabel = QLabel('Full Filepath')
-##        second = QLineEdit()
-##
-##        minus = QLabel('minus')
-##
-##        maskLabel = QLabel('Full Filepath to Shapefile Mask (optional)')
-##        mask = QLineEdit()
-##
-##        densityLabel = QLabel('Density of Material')
-##        density = QLineEdit()
-##
-##        self.vbox.addWidget(firstLabel, 11, 1)
-##        self.vbox.addWidget(first,12,1)
-##        self.vbox.addWidget(minus,12,2)
-##        self.vbox.addWidget(secondLabel,11,3)
-##        self.vbox.addWidget(second,12,3)
+        subtract = QPushButton('Raster Difference')
+        self.vbox.addWidget(subtract, 11, 0)
+
+        firstLabel = QLabel('Full Filepath')
+        first = QLineEdit()
+
+        secondLabel = QLabel('Full Filepath')
+        second = QLineEdit()
+
+        minus = QLabel('minus')
+
+        maskLabel = QLabel('Full Filepath to Shapefile Mask (optional)')
+        mask = QLineEdit()
+
+        densityLabel = QLabel('Density of Material')
+        density = QLineEdit()
+
+        self.vbox.addWidget(firstLabel, 11, 1)
+        self.vbox.addWidget(first,12,1)
+        self.vbox.addWidget(minus,12,2)
+        self.vbox.addWidget(secondLabel,11,3)
+        self.vbox.addWidget(second,12,3)
 ##        self.vbox.addWidget(maskLabel, 11,4)
 ##        self.vbox.addWidget(mask, 12, 4)
 ##        self.vbox.addWidget(densityLabel,11,5)
@@ -163,7 +163,7 @@ class Window(QMainWindow):
         saveCoordsAndRes.clicked.connect(lambda: self.saveCoordsAndResButton())
         csv_to_kml.clicked.connect(lambda: self.csvToKmlButton())
         converter.clicked.connect(lambda: self.converterButton(str(fromType.currentText()),str(toType.currentText())))
-        #subtract.clicked.connect(lambda: self.subtractButton(first.text(),second.text(), density.text(), mask.text()))
+        subtract.clicked.connect(lambda: self.subtractButton(first.text(),second.text(), density.text(), mask.text()))
                                                                
         
 
