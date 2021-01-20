@@ -17,7 +17,9 @@ Convert Rasters, Slope, Aspect, Hillshade, and Roughness ask for a folder contai
 
 Raster Difference takes two parameters: The full filepath to the first raster, and the full filepath to the second raster. These must be typed into the text boxes.
 The operation would then be first minus second. This button will clip the first raster and resample it to match the extent and resolution of the second raster, and save this to a new geotiff.
-It will then calculate the difference and save this as difference.tif.
+It will then calculate the difference and save this as difference.tif. The optional parameter is a filepath to a shapefile to clip the results to. This shapefile should only have one polygon.
+
+Clip Raster to Shape will clip a raster the bounds defined by a shapefile.  It asks for a geotiff, and then the shapefile that defines the boundaries.  This shapefile should only have one polygon.
 
 Save raster coords and resolution asks for a folder of geotiffs and then it will save a csv with the image names, raster coordinates, and resolution.
 
