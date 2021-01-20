@@ -57,7 +57,9 @@ Save raster coords and resolution asks for a folder of geotiffs and then it will
 
 Convert csv points to kml will take a csv with columns 'name', 'lat', 'long' and then convert this to a kml.
 
-Coming soon: Raster Differencing With Shapefile Masks, Constructing Multiband Rasters, Projecting Rasters.
+Coming soon: Zonal Statistics, Constructing Multiband Rasters, Projecting Rasters, Polygon to Raster, Raster to Polygon.
+
+
 
 
 
