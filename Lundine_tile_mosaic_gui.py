@@ -144,13 +144,16 @@ class Window(QMainWindow):
 ##        self.vbox.addWidget(density,12,5)
         
         clipRaster = QPushButton('Clip Raster to Shape')
-        self.vbox.addWidget(clipRaster)
+        self.vbox.addWidget(clipRaster, 13, 0)
+
+        zonalStats = QPushButton('Zonal Statistics')
+        self.vbox.addWidget(zonalStats,14,0)
 
         saveCoordsAndRes = QPushButton('Save raster coordinates and resolution to csv')
-        self.vbox.addWidget(saveCoordsAndRes, 14, 0)
+        self.vbox.addWidget(saveCoordsAndRes, 15, 0)
 
         csv_to_kml = QPushButton('Convert csv points to kml points')
-        self.vbox.addWidget(csv_to_kml,15,0)
+        self.vbox.addWidget(csv_to_kml,16,0)
 
         
         
@@ -167,7 +170,7 @@ class Window(QMainWindow):
         converter.clicked.connect(lambda: self.converterButton(str(fromType.currentText()),str(toType.currentText())))
         subtract.clicked.connect(lambda: self.subtractButton(first.text(),second.text(), density.text(), mask.text()))
         clipRaster.clicked.connect(lambda: self.clipRasterButton())                                                       
-        
+        zonalStats.clicked.connect(lambda: self.zonalStatsButton())
 
 
         self.scroll.setVerticalScrollBarPolicy(Qt.ScrollBarAlwaysOn)
@@ -176,6 +179,17 @@ class Window(QMainWindow):
         self.scroll.setWidget(self.widget)
 
         self.setCentralWidget(self.scroll)
+
+    def zonalStatsButton(self):
+        options = QFileDialog.Options()
+        options |= QFileDialog.DontUseNativeDialog
+        fileName, _ = QFileDialog.getOpenFileName(self,"Select shapefile with zones", "","All Files (*);;Shapefile (*.shp)", options=options)
+        if fileName:
+            options2 = QFileDialog.Options()
+            options2 |= QFileDialog.DontUseNativeDialog
+            fileName2, _ = QFileDialog.getOpenFileName(self,"Select raster", "","All Files (*);; Geotiff (*.tif)", options=options)
+            if fileName2:
+                gdal_functions_app.zonalStatsMain(fileName, fileName2)        
     def clipRasterButton(self):
         options = QFileDialog.Options()
         options |= QFileDialog.DontUseNativeDialog
