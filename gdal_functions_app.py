@@ -15,12 +15,20 @@ import pandas as pd
 import simplekml
 import subprocess
 import shutil
+import matplotlib.pyplot as plt
 # =============================================================================
 # get coords and res will make a spreadsheet of the coordinates and resolution for a folder
 # need to specify the folder with the DEMs and a .csv file path to save the DEMs' coordinates and resolutions
 # of DEMs, using arcpy.  
 # =============================================================================
 def gdal_get_coords_and_res(folder, saveFile):
+    """
+    Takes a folder of geotiffs and outputs a csv with bounding box coordinates and x and y resolution
+    inputs:
+    folder (string): filepath to folder of geotiffs
+    saveFile (string): filepath to csv to save to
+    """
+    
     myList = []
     myList.append(['file', 'xmin', 'ymin', 'xmax', 'ymax', 'xres', 'yres'])
     for dem in glob.glob(folder + '/*.tif'):
@@ -35,6 +43,15 @@ def gdal_get_coords_and_res(folder, saveFile):
 #converts between .tif, .img, .jpg, .npy, .png
 #TODO make output files have spatial reference
 def gdal_convert(inFolder, outFolder, inType, outType):
+    """
+    Converts geotiffs and erdas imagine images to .tif,.jpg, .png, or .img
+    inputs:
+    inFolder (string): folder of .tif or .img images
+    outFolder (string): folder to save result to
+    inType (string): extension of input images ('.tif' or '.img')
+    outType (string): extension of output images ('.tif', '.img', '.jpg', '.png')
+    """
+    
     for im in glob.glob(inFolder + '/*'+inType):
         print('in: ' + im)
         imName = os.path.splitext(os.path.basename(im))[0]
@@ -54,6 +71,13 @@ def gdal_convert(inFolder, outFolder, inType, outType):
 #calculates slope, aspect, hillshade, or roughness on a folder of geotiffs
 #TODO make output files have spatial reference
 def gdal_dem(inFolder, outFolder, computation):
+    """
+    Usess gdal demprocessing to compute slope, hillshade, roughness, or aspect
+    inputs:
+    inFolder (string): folder of geotiffs
+    outFolder (string): folder to save result geotiffs so
+    computation (string): 'hillshade', 'slope', 'Roughness', or 'aspect'
+    """
     for dem in glob.glob(inFolder + '/*.tif'):
         name = os.path.basename(dem)
         print(name)
@@ -64,6 +88,13 @@ def gdal_dem(inFolder, outFolder, computation):
 ##Converts csvs to kmls
 ##Columns of csvs must be 'name','lat','long'
 def csv_to_kml(inFile):
+    """
+    Converts a csv to a kml
+    kml will save in same directory as csv
+    csv columns must be 'name', 'lat', and 'long'
+    inputs:
+    inFile (string): filepath to csv to convert to kml
+    """
     outFile = os.path.splitext(inFile)[0]+'.kml'
     kml = simplekml.Kml()
     df = pd.read_csv(inFile)
@@ -79,6 +110,15 @@ def csv_to_kml(inFile):
 #def gdal_datacube(inFolders,outFolder):
 
 def getMatchingExtentAndRes(rasterToResize, resizerRaster):
+    """
+    Resizes and resamples a raster to the extent and resolution
+    of another raster. The resized raster gets saved to the same
+    directory as rasterToResize with "newExtent" added on to the name.
+    inputs:
+    rasterToResize: filepath to the geotiff you want to resize
+    resizerRaster: filepath to the geotiff containing
+    the wanted extent and resolution
+    """
     # Source
     src_filename = rasterToResize
     src = gdal.Open(src_filename, gdalconst.GA_ReadOnly)
@@ -151,6 +191,16 @@ def write_gtiff(array, gdal_obj, outputpath, dtype=gdal.GDT_UInt16, options=0, c
 ##TODO add a mask polygon option
 ## need to have 
 def gdal_difference(first,second,mask=None):
+    """
+    Computes the difference between two rasters
+    first minus second
+    Saves result as difference.tif to directory of first raster.
+    inputs:
+    first (string): filepath to first raster
+    second (string): filepath to second raster
+    mask (string): optional parameter, a path to
+    a shapefile to clip the difference to.
+    """
     #open dems
     first_dem = gdal.Open(first)
     second_dem = gdal.Open(second)
@@ -173,14 +223,20 @@ def gdal_difference(first,second,mask=None):
     else:
         first_dem = None
         first_arr = None
+##        second_dem = None
+##        second_arr = None
         newFirst = getMatchingExtentAndRes(first,second)
-        print('New Second Raster Saved To: '+newFirst)
+##        newSecond = getMatchingExtentAndRes(second,first)
+        print('New First Raster Saved To: '+newFirst)
+##        print('New Second Raster Saved To: '+newSecond)
         first_dem = gdal.Open(newFirst)
         first_arr = first_dem.GetRasterBand(1).ReadAsArray().astype('float32')
+##        second_dem = gdal.Open(newSecond)
+##        second_arr = second_dem.GetRasterBand(1).ReadAsArray().astype('float32')
+              
 
     #calculate difference
     result = first_arr - second_arr
-
     #get shape, datatype, and coordinate system
     rows,cols = result.shape
     geoTransform = first_dem.GetGeoTransform()
@@ -209,7 +265,8 @@ def gdal_difference(first,second,mask=None):
     if mask != None:
         clipRasterToShape(outRaster, mask)
     print('Result: ' + outRaster)
-    print('Clipped Result: ' + os.path.splitext(outRaster)[0]+'clipped.tif')
+    if mask != None:
+        print('Clipped Result: ' + os.path.splitext(outRaster)[0]+'clipped.tif')
 
 def reproject_vector(in_path, out_path, dest_srs):
     """
@@ -520,8 +577,90 @@ def loop_zonal_stats(input_zone_polygon, input_value_raster):
     return statDictdf
 
 def zonalStatsMain(input_zone_polygon, input_value_raster):
+    """
+    Computes zonal statistics (mean, median, std, variance, range)
+    Saves results to csv
+    inputs:
+    input_zone_polygon: shapefile with polygon zones
+    input_value_raster: raster to perform statistics on
+    """
     df = loop_zonal_stats(input_zone_polygon, input_value_raster)
     savefile = os.path.join(os.path.splitext(input_zone_polygon)[0]+'_zonalstats.csv')
     df.to_csv(savefile,sep=',',index=False)
+
+def plotDEM(dem_list, clim=None, titles=None, cmap='gray', label=None, overlay=None, fn=None):
+    """
+    Plots DEMs
+    inputs:
+    dem_list: a list of geotiff DEMs
+    clim: optional, elevation limits (min,max)
+    titles: optional, a list of titles for the DEMs
+    cmap: optional, matplotlib colormap, default is grayscale
+    label: optional, label for colorbar ex: 'Elevation (m)'
+    overlay: optional, list of hillshade rasters that correspond to list of DEMs
+    fn: optional, png path to save plot to
+    """
+    arr_list = [None]*len(dem_list)
+    i=0
+    for dem in dem_list:
+        dem = gdal.Open(dem)
+        dem_arr = np.array(dem.GetRasterBand(1).ReadAsArray().astype('float32'))
+        arr_list[i]=dem_arr
+        i=i+1
+    if overlay != None:
+        over_arr_list = [None]*len(overlay)
+        i=0
+        for dem in overlay:
+            dem = gdal.Open(dem)
+            dem_arr = np.array(dem.GetRasterBand(1).ReadAsArray().astype('uint16'))
+            over_arr_list[i]=dem_arr
+            i=i+1
+    else:
+        pass
+    fig, axa = plt.subplots(1,len(dem_list), sharex=True, sharey=True, figsize=(10,5))
+    alpha = 1.0
+    try:
+        for n, ax in enumerate(axa):
+            #Gray background
+            ax.set_facecolor('0.5')
+            #Force aspect ratio to match images
+            ax.set(adjustable='box', aspect='equal')
+            #Turn off axes labels/ticks
+            ax.get_xaxis().set_visible(False)
+            ax.get_yaxis().set_visible(False)
+            if titles is not None:
+                ax.set_title(titles[n])
+            #Plot background shaded relief map
+            if overlay is not None:
+                alpha = 0.7
+                axa[n].imshow(over_arr_list[n], cmap='gray', clim=(1,255))
+        #Plot each array
+        im_list = [axa[i].imshow(arr_list[i], clim=clim, cmap=cmap, alpha=alpha) for i in range(len(arr_list))]
+        fig.tight_layout()
+        fig.colorbar(im_list[0], ax=axa.ravel().tolist(), label=label, extend='both', shrink=0.5)
+        if fn is not None:
+            fig.savefig(fn, bbox_inches='tight', pad_inches=0, dpi=150)   
+    except:
+        #Gray background
+        axa.set_facecolor('0.5')
+        #Force aspect ratio to match images
+        axa.set(adjustable='box', aspect='equal')
+        #Turn off axes labels/ticks
+        axa.get_xaxis().set_visible(False)
+        axa.get_yaxis().set_visible(False)
+        if titles is not None:
+            axa.set_title(titles[0])
+        #Plot background shaded relief map
+        if overlay is not None:
+            alpha = 0.7
+            axa.imshow(over_arr_list[0], cmap='gray', clim=(1,255))
+        #Plot each array
+        im_list = [axa.imshow(arr_list[i], clim=clim, cmap=cmap, alpha=alpha) for i in range(len(arr_list))]
+        fig.tight_layout()
+        fig.colorbar(im_list[0], ax=axa, label=label, extend='both', shrink=0.5)
+        if fn is not None:
+            fig.savefig(fn, bbox_inches='tight', pad_inches=0, dpi=150)
+
+
 
 
