@@ -162,14 +162,21 @@ class Window(QMainWindow):
         rasterToShape = QPushButton('Convert Rasters To Shapefiles')
         self.vbox.addWidget(rasterToShape, 16, 0)
 
+        mergeShapefiles = QPushButton('Merge Shapefiles')
+        shapeLabel = QLabel('Full Filepath to Shapefile')
+        shape = QLineEdit()
+        self.vbox.addWidget(mergeShapefiles, 17, 0)
+        self.vbox.addWidget(shapeLabel,17,1)
+        self.vbox.addWidget(shape,18,1)
+
         zonalStats = QPushButton('Zonal Statistics')
-        self.vbox.addWidget(zonalStats,17,0)
+        self.vbox.addWidget(zonalStats,19,0)
 
         saveCoordsAndRes = QPushButton('Save raster coordinates and resolution to csv')
-        self.vbox.addWidget(saveCoordsAndRes, 18, 0)
+        self.vbox.addWidget(saveCoordsAndRes, 20, 0)
 
         csv_to_kml = QPushButton('Convert csv points to kml points')
-        self.vbox.addWidget(csv_to_kml,19,0)
+        self.vbox.addWidget(csv_to_kml,21,0)
 
         
         
@@ -189,7 +196,7 @@ class Window(QMainWindow):
         zonalStats.clicked.connect(lambda: self.zonalStatsButton())
         rasterToShape.clicked.connect(lambda: self.rasterToShapeButton())
         kmeans.clicked.connect(lambda: self.kmeansButton(kmeanClasses.value(), kmeansNoData.text()))
-        
+        mergeShapefiles.clicked.connect(lambda: self.mergeShapefilesButton(shape.text()))
 
         self.scroll.setVerticalScrollBarPolicy(Qt.ScrollBarAlwaysOn)
         self.scroll.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOn)
@@ -197,6 +204,14 @@ class Window(QMainWindow):
         self.scroll.setWidget(self.widget)
 
         self.setCentralWidget(self.scroll)
+
+
+    def mergeShapefilesButton(self, outShapefile):
+        options1 = QFileDialog.Options()
+        options1 |= QFileDialog.DontUseNativeDialog
+        folderName1 = str(QFileDialog.getExistingDirectory(self, "Select Folder of Rasters"))
+        if folderName1:
+            gdal_functions_app.mergeShapes(folderName1,outShapefile)
 
     def kmeansButton(self, classes, noData):
         options1 = QFileDialog.Options()

@@ -51,7 +51,15 @@ Raster Difference takes two parameters: The full filepath to the first raster, a
 The operation would then be first minus second. This button will clip the first raster and resample it to match the extent and resolution of the second raster, and save this to a new geotiff.
 It will then calculate the difference and save this as difference.tif. The optional parameter is a filepath to a shapefile to clip the results to. This shapefile should only have one polygon.
 
+kmeans unsupervised classification will perform kmeans unsupervised classification on a folder of geotiffs.  Fill in the number of classes you want, and the nodata value.
+Make sure the nodata value is the same fo all of the geotiffs in that folder.  It will ask you for the folder of input images, and also a folder to save the results to.
+
 Clip Raster to Shape will clip a raster to the bounds defined by a shapefile.  It asks for a geotiff, and then the shapefile that defines the boundaries.  This shapefile should only have one polygon.
+
+Convert Rasters to Shapefiles will take as input a folder of rasters with discrete-valued pixels and convert all of these to shapefiles.
+
+Merge shapefiles will take as input a folder of shapefiles and put them into one shapefile.  Each shapefile must have identical fields in its attribute table.
+Type in the full filepath to the output shapefile before you use this button.  example: C:/data/output/myshapefile.shp.
 
 Zonal Stats asks for a shapefile containing a bunch of polygons and a raster to find mean,median,standard deviation, variance, and range from.
 It outputs a csv with these stats for each polygon in the shapefile.

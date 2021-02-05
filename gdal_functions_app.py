@@ -18,8 +18,7 @@ import shutil
 import matplotlib.pyplot as plt
 from sklearn.cluster import KMeans
 import cv2
-import spectral as spy
-import supervised
+#import supervised
 # =============================================================================
 # get coords and res will make a spreadsheet of the coordinates and resolution for a folder
 # need to specify the folder with the DEMs and a .csv file path to save the DEMs' coordinates and resolutions
@@ -852,9 +851,3 @@ def mergeShapes(folder, outShape):
     """
     os.system('python MergeSHPfiles_cmd.py ' + folder + ' ' + outShape)
 
-##batchClipRasterToBbox(r'C:\BaywatchData\delmarva\geo_bounding_boxes\result_geobboxfilter.csv',
-##                      r'C:\BaywatchData\delmarva\Tiles',
-##                      r'C:\BaywatchData\delmarva\CroppedTiles')    
-##kmeans_batch(r'C:\BaywatchData\delmarva\CroppedTiles', 2, 0, r'C:\BaywatchData\delmarva\Kmeans', detect=True)
-##raster_to_polygon_batch(r'C:\BaywatchData\delmarva\Kmeans')
-##mergeShapes(r'C:\BaywatchData\delmarva\Kmeans', r'C:\BaywatchData\delmarva\kmeansmerge.shp')
