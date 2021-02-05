@@ -16,6 +16,10 @@ import simplekml
 import subprocess
 import shutil
 import matplotlib.pyplot as plt
+from sklearn.cluster import KMeans
+import cv2
+import spectral as spy
+import supervised
 # =============================================================================
 # get coords and res will make a spreadsheet of the coordinates and resolution for a folder
 # need to specify the folder with the DEMs and a .csv file path to save the DEMs' coordinates and resolutions
@@ -660,7 +664,197 @@ def plotDEM(dem_list, clim=None, titles=None, cmap='gray', label=None, overlay=N
         fig.colorbar(im_list[0], ax=axa, label=label, extend='both', shrink=0.5)
         if fn is not None:
             fig.savefig(fn, bbox_inches='tight', pad_inches=0, dpi=150)
+            
+def raster_to_polygon(raster_path):
+    """
+    Converts raster with discrete pixel values to polygons
+    inputs:
+    raster_path: the input raster filepath
+    """
+    
+    shape_path = os.path.splitext(raster_path)[0]+'poly.shp'
+    os.system('python gdal_polygonize.py ' + raster_path + ' ' + shape_path)
 
+def raster_to_polygon_batch(folder):
+    """
+    Converts a folder of rasters to shapefiles
+    inputs:
+    folder: filepath to folder of geotiffs
+    """
+    for raster in glob.glob(folder + '/*.tif'):
+        print(raster)
+        raster_to_polygon(raster)
 
+def kmeans(image_path, classes, geo, no_data_val, show, save_folder = None, detect=False):
+    """
+    performs kmeans unsupervised clustering on an image,
+    saves result to a jpeg or geotiff
+    inputs:
+    image_path: path to an image (.jpeg, .tif, .img, .png)
+    classes: number of classes to cluster image into
+    geo: True if the images are georeferenced (for geotiffs and erdas imagines)
+    False if they are not georeferenced
+    no_data_val: only for georeferenced images, the no-data value
+    show: only for non-georeferenced images, just will show the result
+    """
+    save_path = os.path.splitext(image_path)[0]+'kmeans'+str(classes)
+    if save_folder != None:
+        save_path = os.path.join(save_folder, os.path.basename(save_path))
+        
+    if geo == True:
+        
+        ### read in image to classify with gdal
+        driverTiff = gdal.GetDriverByName('GTiff')
+        input_raster = gdal.Open(image_path)
+        nbands = input_raster.RasterCount
+        nodata = no_data_val
+        ### create an empty array, each column of the empty array will hold one band of data from the image
+        ### loop through each band in the image nad add to the data array
+        data = np.empty((input_raster.RasterXSize*input_raster.RasterYSize, nbands))
+        for i in range(1, nbands+1):
+            band = input_raster.GetRasterBand(i).ReadAsArray()
+            data[:, i-1] = band.flatten()
+        data[data<nodata] = 0
+    else:
+        save_path = save_path + '.jpeg'
+        im = cv2.imread(image_path)
+        rows,cols,nbands = np.shape(im)
+        data = np.empty((rows*cols,nbands))
+        for i in range(0,nbands):
+            band = im[:,:,i]
+            data[:, i-1] = band.flatten()
+            
+    
+    # set up the kmeans classification, fit, and predict
+    km = KMeans(n_clusters=classes)
+    km.fit(data)
+    km.predict(data)
 
+    if geo==True:
+        save_path = save_path+'.tif'
+        # format the predicted classes to the shape of the original image
+        out_dat = km.labels_.reshape((input_raster.RasterYSize, input_raster.RasterXSize))
+        if detect==True:
+            val = out_dat[int(input_raster.RasterYSize/2),int(input_raster.RasterXSize/2)]
+            a, counts = np.unique(out_dat, return_counts=True)
+            idx = np.argmax(counts)
+            mode = a[idx]
+            if val == 1 and mode == 1:
+                print('hi')
+                pass
+            elif val == 0 and mode == 0:
+                print('hello')
+                new_out_dat = np.empty(np.shape(out_dat),dtype=int)
+                idx1 = out_dat[out_dat<1]
+                idx2 = out_dat[out_dat>0]
+                new_out_dat[idx1] = 1
+                new_out_dat[idx2] = 0
+                out_dat = new_out_dat
+                new_out_dat = None
+                if np.sum(np.ravel(out_dat)) < 5:
+                    return
+            else:
+                return
+        # save the original image with gdal
+        clfds = driverTiff.Create(save_path, input_raster.RasterXSize, input_raster.RasterYSize, 1, gdal.GDT_Float32)
+        clfds.SetGeoTransform(input_raster.GetGeoTransform())
+        clfds.SetProjection(input_raster.GetProjection())
+        clfds.GetRasterBand(1).SetNoDataValue(0)
+        clfds.GetRasterBand(1).WriteArray(out_dat)
+        clfds = None
+        out_dat=None
+    else:
+        # format the predicted classes to the shape of the original image
+        out_dat = km.labels_.reshape((rows,cols))
+        cv2.imwrite(save_path, out_dat)
+        if show==True:
+            plt.imshow(out_dat)
+            plt.xticks([],[])
+            plt.yticks([],[])
+            plt.show()
+        else:
+            pass
 
+def kmeans_batch(inFolder, numClasses, noDataVal, outFolder, detect=False):
+    """
+    Performs kmeans clustering on a folder of geotiffs or erdas imagine images
+    inputs:
+    inFolder: path to input folder
+    numClasses: integer number of classes
+    noDataVal: the value for nodata in the rasters
+    outFolder: path to the output folder
+    """
+    for image in glob.glob(inFolder + '/*.tif'):
+        kmeans(image, numClasses, True, noDataVal, False, save_folder=outFolder, detect = detect)
+    for image in glob.glob(inFolder + '/*.img'):
+        kmeans(image, numClasses, True, noDataVal, False, save_folder=outFolder)
+
+def clipRasterToBbox(rasterToClip, bbox, saveFile):
+    """
+    Clips a raster to new bounding box
+    inputs:
+    rasterToClip: filepath to raster to clip
+    bbox: [xmin, ymax, xmax, ymin]
+    savFile: raster filepath to save to
+    """
+    ds = gdal.Open(rasterToClip)
+    ds = gdal.Translate(saveFile, ds, projWin = bbox)
+    ds = None
+    
+def batchClipRasterToBbox(bboxCSV, inFolder, outFolder):
+    """
+    clips a folder of rasters to bounding boxes defined in a csv
+    inputs:
+    bboxCSV: the csv containing the bounding boxes and corresponding filenames
+    stucture must be filename, xmin, ymin, xmax, ymax
+    inFolder: the folder containing the rasters
+    outFolder: folder to save clipped rasters to
+    the saved rasters will be given a numeric id
+    """
+    df = pd.read_csv(bboxCSV)
+    ID = 1
+    for i in range(len(df)):
+        filename = df.iloc[i,0]
+        xmin = df.iloc[i,1]
+        ymin = df.iloc[i,2]
+        xmax = df.iloc[i,3]
+        ymax = df.iloc[i,4]
+        width = xmax-xmin
+        height = ymax-ymin
+        bbox = [xmin,ymin,xmax,ymax]
+        image = os.path.join(inFolder, filename+'.tif')
+        saveImage = os.path.join(outFolder, filename+str(ID)+'.tif')
+        print(saveImage)
+        clipRasterToBbox(image, bbox, saveImage)
+        ID = ID+1
+
+def filterGeobox(bboxCSV, threshold):
+    """
+    Filters geobbox csv to a specific threshold
+    inputs:
+    bboxcsv: filepath to the geobbox csv
+    threshold: threshold value to filter above
+    """
+    saveCSV = os.path.splitext(bboxCSV)[0]+'filter.csv'
+    df = pd.read_csv(bboxCSV)
+    querystr = "score >= "+str(threshold)
+    filtered = df.query(querystr)
+    filtered = filtered.reset_index(drop=True)
+    filtered.to_csv(saveCSV,index=False)
+
+def mergeShapes(folder, outShape):
+    """
+    Merges a bunch of shapefiles. Sshapefiles have to have same fields
+    in attribute table.
+    inputs:
+    folder: filepath to folder with all of the shapefiles
+    outShape: filepath to file to save to, has to have .shp extension.
+    """
+    os.system('python MergeSHPfiles_cmd.py ' + folder + ' ' + outShape)
+
+##batchClipRasterToBbox(r'C:\BaywatchData\delmarva\geo_bounding_boxes\result_geobboxfilter.csv',
+##                      r'C:\BaywatchData\delmarva\Tiles',
+##                      r'C:\BaywatchData\delmarva\CroppedTiles')    
+##kmeans_batch(r'C:\BaywatchData\delmarva\CroppedTiles', 2, 0, r'C:\BaywatchData\delmarva\Kmeans', detect=True)
+##raster_to_polygon_batch(r'C:\BaywatchData\delmarva\Kmeans')
+##mergeShapes(r'C:\BaywatchData\delmarva\Kmeans', r'C:\BaywatchData\delmarva\kmeansmerge.shp')

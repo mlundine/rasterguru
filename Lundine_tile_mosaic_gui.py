@@ -142,18 +142,34 @@ class Window(QMainWindow):
         self.vbox.addWidget(mask, 12, 4)
 ##        self.vbox.addWidget(densityLabel,11,5)
 ##        self.vbox.addWidget(density,12,5)
+
+        kmeans = QPushButton('K-means unsupervised classification')
+        self.vbox.addWidget(kmeans, 13, 0)
+        kmeanClassesLabel = QLabel('# of Classes')
+        kmeanClasses = QSpinBox()
+        kmeanClasses.setMinimum(2)
+        kmeanClasses.setValue(2)
+        kmeansNoDataLabel = QLabel('NoData Value')
+        kmeansNoData = QLineEdit()
+        self.vbox.addWidget(kmeansNoDataLabel, 13, 2)
+        self.vbox.addWidget(kmeanClassesLabel,13,1)
+        self.vbox.addWidget(kmeansNoData, 14, 2)
+        self.vbox.addWidget(kmeanClasses, 14, 1)
         
         clipRaster = QPushButton('Clip Raster to Shape')
-        self.vbox.addWidget(clipRaster, 13, 0)
+        self.vbox.addWidget(clipRaster, 15, 0)
+
+        rasterToShape = QPushButton('Convert Rasters To Shapefiles')
+        self.vbox.addWidget(rasterToShape, 16, 0)
 
         zonalStats = QPushButton('Zonal Statistics')
-        self.vbox.addWidget(zonalStats,14,0)
+        self.vbox.addWidget(zonalStats,17,0)
 
         saveCoordsAndRes = QPushButton('Save raster coordinates and resolution to csv')
-        self.vbox.addWidget(saveCoordsAndRes, 15, 0)
+        self.vbox.addWidget(saveCoordsAndRes, 18, 0)
 
         csv_to_kml = QPushButton('Convert csv points to kml points')
-        self.vbox.addWidget(csv_to_kml,16,0)
+        self.vbox.addWidget(csv_to_kml,19,0)
 
         
         
@@ -171,7 +187,9 @@ class Window(QMainWindow):
         subtract.clicked.connect(lambda: self.subtractButton(first.text(),second.text(), density.text(), mask.text()))
         clipRaster.clicked.connect(lambda: self.clipRasterButton())                                                       
         zonalStats.clicked.connect(lambda: self.zonalStatsButton())
-
+        rasterToShape.clicked.connect(lambda: self.rasterToShapeButton())
+        kmeans.clicked.connect(lambda: self.kmeansButton(kmeanClasses.value(), kmeansNoData.text()))
+        
 
         self.scroll.setVerticalScrollBarPolicy(Qt.ScrollBarAlwaysOn)
         self.scroll.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOn)
@@ -180,6 +198,24 @@ class Window(QMainWindow):
 
         self.setCentralWidget(self.scroll)
 
+    def kmeansButton(self, classes, noData):
+        options1 = QFileDialog.Options()
+        options1 |= QFileDialog.DontUseNativeDialog
+        folderName1 = str(QFileDialog.getExistingDirectory(self, "Select Folder of Rasters"))
+        if folderName1:
+            options2 = QFileDialog.Options()
+            options2 |= QFileDialog.DontUseNativeDialog
+            folderName2 = str(QFileDialog.getExistingDirectory(self, "Select Folder To Save To"))
+            if folderName2:
+                gdal_functions_app.kmeans_batch(folderName1, classes, float(noData), folderName2)
+                
+    def rasterToShapeButton(self):
+        options1 = QFileDialog.Options()
+        options1 |= QFileDialog.DontUseNativeDialog
+        folderName1 = str(QFileDialog.getExistingDirectory(self, "Select Folder of Rasters"))
+        if folderName1:
+            gdal_functions_app.raster_to_polygon_batch(folderName1)
+            
     def zonalStatsButton(self):
         options = QFileDialog.Options()
         options |= QFileDialog.DontUseNativeDialog
