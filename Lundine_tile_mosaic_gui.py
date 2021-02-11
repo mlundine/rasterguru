@@ -76,7 +76,6 @@ class Window(QMainWindow):
         overlap.setMaximum(5000)
         self.vbox.addWidget(overlap, 1, 2)
 
-
         converter = QPushButton('Convert Rasters')
         self.vbox.addWidget(converter, 4, 0)
         fromType = QComboBox()
@@ -93,16 +92,17 @@ class Window(QMainWindow):
         self.vbox.addWidget(toLab, 4, 2)
         self.vbox.addWidget(toType, 4, 3)
 
-##        multiband = QPushButton('Make Multiband Rasters')
-##        self.vbox.addWidget(multiband, 6,0)
-##
-##        numBandsLab = QLabel('Bands')
-##        self.vbox.addWidget(numBandsLab, 5, 1)
-##        numBands = QSpinBox()
-##        numBands.setValue(3)
-##        numBands.setMinimum(2)
-##        numBands.setMaximum(15)
-##        self.vbox.addWidget(numBands, 6, 1)
+        multiband = QPushButton('Make Multiband Rasters')
+        self.vbox.addWidget(multiband, 6,0)
+        
+        #todo
+        numBandsLab = QLabel('Bands')
+        self.vbox.addWidget(numBandsLab, 5, 1)
+        numBands = QSpinBox()
+        numBands.setValue(3)
+        numBands.setMinimum(2)
+        numBands.setMaximum(15)
+        self.vbox.addWidget(numBands, 6, 1)
 
         slope = QPushButton('Slope')
         self.vbox.addWidget(slope, 7, 0)
@@ -156,27 +156,31 @@ class Window(QMainWindow):
         self.vbox.addWidget(kmeansNoData, 14, 2)
         self.vbox.addWidget(kmeanClasses, 14, 1)
         
+        #todo
+        virtualRaster = QPushButton('Make Virtual Raster Dataset')
+        self.vbox.addWidget(virtualRaster, 15, 0)
+        
         clipRaster = QPushButton('Clip Raster to Shape')
-        self.vbox.addWidget(clipRaster, 15, 0)
+        self.vbox.addWidget(clipRaster, 16, 0)
 
         rasterToShape = QPushButton('Convert Rasters To Shapefiles')
-        self.vbox.addWidget(rasterToShape, 16, 0)
+        self.vbox.addWidget(rasterToShape, 17, 0)
 
         mergeShapefiles = QPushButton('Merge Shapefiles')
         shapeLabel = QLabel('Full Filepath to Shapefile')
         shape = QLineEdit()
-        self.vbox.addWidget(mergeShapefiles, 17, 0)
-        self.vbox.addWidget(shapeLabel,17,1)
-        self.vbox.addWidget(shape,18,1)
+        self.vbox.addWidget(mergeShapefiles, 18, 0)
+        self.vbox.addWidget(shapeLabel,18,1)
+        self.vbox.addWidget(shape,19,1)
 
         zonalStats = QPushButton('Zonal Statistics')
-        self.vbox.addWidget(zonalStats,19,0)
+        self.vbox.addWidget(zonalStats,20,0)
 
         saveCoordsAndRes = QPushButton('Save raster coordinates and resolution to csv')
-        self.vbox.addWidget(saveCoordsAndRes, 20, 0)
+        self.vbox.addWidget(saveCoordsAndRes, 21, 0)
 
         csv_to_kml = QPushButton('Convert csv points to kml points')
-        self.vbox.addWidget(csv_to_kml,21,0)
+        self.vbox.addWidget(csv_to_kml,22,0)
 
         
         
@@ -197,6 +201,9 @@ class Window(QMainWindow):
         rasterToShape.clicked.connect(lambda: self.rasterToShapeButton())
         kmeans.clicked.connect(lambda: self.kmeansButton(kmeanClasses.value(), kmeansNoData.text()))
         mergeShapefiles.clicked.connect(lambda: self.mergeShapefilesButton(shape.text()))
+        multiband.clicked.connect(lambda: self.multibandButton(numBands.value()))
+        virtualRaster.clicked.connect(lambda: self.virtualRasterButton())
+        
 
         self.scroll.setVerticalScrollBarPolicy(Qt.ScrollBarAlwaysOn)
         self.scroll.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOn)
@@ -205,11 +212,36 @@ class Window(QMainWindow):
 
         self.setCentralWidget(self.scroll)
 
+    def multibandButton(self, numBands):
+        folder_list = []
+        for i in range(numBands):
+            options1 = QFileDialog.Options()
+            options1 |= QFileDialog.DontUseNativeDialog
+            folderName1 = str(QFileDialog.getExistingDirectory(self, "Select Folder of Geotiffs"))
+            if folderName1:
+                folder_list.append(folderName1)
+        if len(folder_list) != 0:
+            options1 = QFileDialog.Options()
+            options1 |= QFileDialog.DontUseNativeDialog
+            folderName1 = str(QFileDialog.getExistingDirectory(self, "Select Folder to Save to"))
+            if folderName1:
+                gdal_functions_app.batch_gdal_datacube(folder_list, folderName1)
 
+    def virtualRasterButton(self):
+        options1 = QFileDialog.Options()
+        options1 |= QFileDialog.DontUseNativeDialog
+        folderName1 = str(QFileDialog.getExistingDirectory(self, "Select Folder of Geotiffs"))
+        if folderName1:
+            options2 = QFileDialog.Options()
+            options2 |= QFileDialog.DontUseNativeDialog
+            folderName2 = str(QFileDialog.getExistingDirectory(self, "Select Folder to Save to"))
+            if folderName2:
+                gdal_functions_app.buildVRT(folderName2, inFolder = folderName1)
+                
     def mergeShapefilesButton(self, outShapefile):
         options1 = QFileDialog.Options()
         options1 |= QFileDialog.DontUseNativeDialog
-        folderName1 = str(QFileDialog.getExistingDirectory(self, "Select Folder of Rasters"))
+        folderName1 = str(QFileDialog.getExistingDirectory(self, "Select Folder of Shapefiles"))
         if folderName1:
             gdal_functions_app.mergeShapes(folderName1,outShapefile)
 

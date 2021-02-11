@@ -18,6 +18,7 @@ import shutil
 import matplotlib.pyplot as plt
 from sklearn.cluster import KMeans
 import cv2
+from pykml import parser
 #import supervised
 # =============================================================================
 # get coords and res will make a spreadsheet of the coordinates and resolution for a folder
@@ -109,8 +110,78 @@ def csv_to_kml(inFile):
         pnt.style.iconstyle.scale=1
     kml.save(outFile)
 
-##TODO
-#def gdal_datacube(inFolders,outFolder):
+
+def gdal_datacube(images, outFolder):
+    """
+    takes a list of single band geotiffs with matching extent and resolution
+    constructs multiband geotiff, saves result with 'cube' appendd to the end
+    inputs:
+    images: the list of filepaths to the images
+    outFolder: the filepath of the folder to save to
+    """
+    ##assign name for output file
+    name = os.path.splitext(os.path.basename(images[0]))[0] + 'cube.tif'
+    out_path = os.path.join(outFolder, name)
+    print(out_path)
+    
+    ##see how many bands, rows, and columns output will have, get datatype
+    nbands = len(images)
+    firstBand = gdal.Open(images[0])
+    rows,cols = firstBand.RasterYSize, firstBand.RasterXSize
+    datatype = firstBand.GetRasterBand(1).DataType
+
+    ##establish geotransform and projection
+    geotrans = firstBand.GetGeoTransform()
+    proj = firstBand.GetProjection()
+    srs = osr.SpatialReference()
+    srs.ImportFromWkt(proj)
+    
+    ##close first image
+    firstBand = None
+    
+    ##initialize datacube array, then fill each band with geotiff data
+    dataCube = np.empty((rows, cols, nbands))
+    for i in range(len(images)):
+        band = gdal.Open(images[i])
+        band = band.GetRasterBand(1).ReadAsArray()
+        dataCube[:,:,i] = band
+        band = None
+    ## save geotiff
+    driverTiff = gdal.GetDriverByName('GTiff')
+    out_tiff = driverTiff.Create(out_path, cols, rows, nbands, datatype)
+    out_tiff.SetGeoTransform(geotrans)
+    out_tiff.SetProjection(srs.ExportToWkt())
+    for i in range(1,nbands+1):
+        out_tiff.GetRasterBand(i).SetNoDataValue(-9999)
+        out_tiff.GetRasterBand(i).WriteArray(dataCube[:,:,i-1])
+
+    ## clean up
+    out_tiff = None
+    datacube = None
+
+def batch_gdal_datacube(inFolders, outFolder):
+    """
+    runs gdal_datacube on folders of geotiffs
+    inputs:
+    inFolders: list of folders containing geotiffs,
+    foldernames must be different but image names much match
+    outFolder: filepath to save the datacubes
+    """
+    path, dirs, files = next(os.walk(inFolders[0]))
+    file_count = len(files)
+    stacked_images = [None]*len(inFolders)
+    for i in range(len(inFolders)):
+        im_list = [None]*file_count
+        j=0
+        for image in glob.glob(inFolders[i]+'/*.tif'):
+            im_list[j]=image
+            j=j+1
+        im_list = sorted(im_list)
+        stacked_images[i] = im_list
+    stacked_images = np.array(stacked_images)
+    for i in range(file_count):
+        image_list = stacked_images[:,i]
+        gdal_datacube(image_list, outFolder)
 
 def getMatchingExtentAndRes(rasterToResize, resizerRaster):
     """
@@ -322,7 +393,7 @@ def clipRasterToShape(raster_path, aoi_path, srs_id=4326, flip_x_y = False):
     new_geotransform = (min_x_geo, in_gt[1], 0, max_y_geo, 0, in_gt[5])   # OK, time for hacking
     write_geometry(intersection, intersection_path, srs_id=srs.ExportToWkt())
     clip_spec = gdal.WarpOptions(
-        format="GTiff",
+        format="VRT",
         cutlineDSName=intersection_path+r"/geometry.shp",   # TODO: Fix the need for this
         cropToCutline=True,
         width=width_pix,
@@ -713,7 +784,7 @@ def kmeans(image_path, classes, geo, no_data_val, show, save_folder = None, dete
         for i in range(1, nbands+1):
             band = input_raster.GetRasterBand(i).ReadAsArray()
             data[:, i-1] = band.flatten()
-        data[data<nodata] = 0
+        data[data<nodata] = np.mean(data)
     else:
         save_path = save_path + '.jpeg'
         im = cv2.imread(image_path)
@@ -753,6 +824,7 @@ def kmeans(image_path, classes, geo, no_data_val, show, save_folder = None, dete
                 if np.sum(np.ravel(out_dat)) < 5:
                     return
             else:
+                'skipped'
                 return
         # save the original image with gdal
         clfds = driverTiff.Create(save_path, input_raster.RasterXSize, input_raster.RasterYSize, 1, gdal.GDT_Float32)
@@ -850,4 +922,106 @@ def mergeShapes(folder, outShape):
     outShape: filepath to file to save to, has to have .shp extension.
     """
     os.system('python MergeSHPfiles_cmd.py ' + folder + ' ' + outShape)
+
+
+def buildVRT(outFolder, inFolder=None, rasterList = None):
+    vrt_options = gdal.BuildVRTOptions(resampleAlg='cubic', addAlpha=True)
+    if inFolder != None:
+        image_list = []
+        for image in glob.glob(inFolder + '/*.tif'):
+            image_list.append(image)
+    if rasterList != None:
+        image_list = rasterList
+        
+    saveFile = os.path.join(outFolder, 'mosaic.vrt')
+    gdal.BuildVRT(saveFile, image_list, options=vrt_options)
+
+def clipVRT(vrt_path, clipShape):
+    inraster = vrt_path
+    inshape = clipShape
+    ds = ogr.Open(inshape)
+    lyr = ds.GetLayer()
+    
+
+    featList = range(lyr.GetFeatureCount())
+    for FID in featList:
+        feat = lyr.GetFeature(FID)
+        ID = feat.GetFieldAsString('Name')
+        print(str(FID/featList[-1]))
+        outraster = os.path.splitext(vrt_path)[0]+ID+'.tif'
+        if os.path.isfile(outraster):
+            continue
+        query = "'Name'=%s" % ID
+        subprocess.call(['gdalwarp', inraster, outraster, '-cutline', inshape, 
+                         '-crop_to_cutline', '-cwhere', "Name = %s" % ID])
+
+def pngToGeotiff(png_path, kml_path, output_path):
+    """
+    Converts Reefmaster output (png and kml) to geotiff
+    inputs:
+    png_path: path to the png containing image data
+    kml_path: path to the kml containing spatial extent
+    output_path: path to save geotiff to (ends with .tif)
+    """
+
+    ##open png as numpy array, get shape
+    image = cv2.imread(png_path)
+    rows,cols,bands = np.shape(image)
+
+    ## get the geotransform and coordinate system from the kml
+    geotransform, proj = parseKML(kml_path, rows, cols)
+
+    ## save geotiff
+    driverTiff = gdal.GetDriverByName('GTiff')
+    out_tiff = driverTiff.Create(output_path, cols, rows, bands, gdal.GDT_Int16)
+    out_tiff.SetGeoTransform(geotransform)
+    out_tiff.SetProjection(proj.ExportToWkt())
+    for i in range(1,bands+1):
+        out_tiff.GetRasterBand(i).SetNoDataValue(-9999)
+        out_tiff.GetRasterBand(i).WriteArray(image[:,:,i-1])
+
+    ## clean up
+    out_tiff = None
+    image = None
+    
+def parseKML(kml_path, nrows, ncols, epsg_code=4326):
+    """
+    reads the xmin,xmax,ymin,and ymax from reefmaster kml
+    inputs:
+    kml_path: filepath to the kml
+    epsg_code (optional): in case the data is not in wgs84 lat lon
+    outputs:
+    geotransform: gdal geotransform object
+    proj: gdal projection object
+    """
+    with open(kml_path) as f:
+        tree = parser.parse(f)
+        root = tree.getroot()
+    
+
+    ymax = float(root.Document.GroundOverlay.LatLonBox.north.text)
+    ymin = float(root.Document.GroundOverlay.LatLonBox.south.text)
+    xmax = float(root.Document.GroundOverlay.LatLonBox.east.text)
+    xmin = float(root.Document.GroundOverlay.LatLonBox.west.text)
+
+    xres = (xmax-xmin)/float(ncols)
+    yres = (ymax-ymin)/float(nrows)
+    geotransform=(xmin,xres,0,ymax,0,-yres)
+    proj = osr.SpatialReference()                 # Establish its coordinate encoding
+    proj.ImportFromEPSG(epsg_code)                     # This one specifies WGS84 lat long.
+    
+    return geotransform, proj
+
+def batchPNGtoGeotiff(folder):
+    """
+    runs pngToGeotiff on a folder of png/kml pairs
+    saves geotiffs to same folder
+    inputs:
+    folder: filepath to the folder the png/kml pairs are sitting in
+    """
+    for image in glob.glob(folder + '/*.png'):
+        base = os.path.splitext(image)[0]
+        kml = base + '.kml'
+        out = base + '.tif'
+        pngToGeotiff(image, kml, out)
 

@@ -6,6 +6,11 @@ dependencies:
   - numpy
   - gdal
   - pandas
+  - matplotlib
   - pip:
     - simplekml
     - pyqt5
+    - pykml
+    - opencv-python
+    - scikit-learn
+
