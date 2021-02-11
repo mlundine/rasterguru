@@ -126,13 +126,17 @@ Save raster coords and resolution asks for a folder of geotiffs and then it will
 
 Convert csv points to kml will take a csv with columns 'name', 'lat', 'long' and then convert this to a kml.
 
-Coming soon: Projecting Rasters
 
 # Extra Scripts
 
 reefmaster_converter.py will convert png/kml pair ReefMaster outputs to geotiffs. 
 
 supervised.py will run various supervised classifiers on an image/mask annotation pair.
+
+# Coming Soon
+
+Projecting Rasters, Some operations on Virtual Raster Datasets, maybe a png/jpeg to geotiff converter where you can enter in the extent/spatial reference.
+It all depends on the tasks I come across.
 
 
 
