@@ -128,6 +128,12 @@ Convert csv points to kml will take a csv with columns 'name', 'lat', 'long' and
 
 Coming soon: Projecting Rasters
 
+# Extra Scripts
+
+reefmaster_converter.py will convert png/kml pair ReefMaster outputs to geotiffs. 
+
+supervised.py will run various supervised classifiers on an image/mask annotation pair.
+
 
 
 
