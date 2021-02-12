@@ -52,6 +52,9 @@ python Lundine_tile_mosaic_gui.py
 
 Alternatively, you can import the gdal_functions_app file as a module and run its functions from a Python script.
 
+The code gdal_functions_app.py has many functions that could be useful for
+people trying to learn how to work with GDAL and OGR.
+
 # Running the Standalone Executable on a Windows Machine
 
 An executable, RasterGuru.exe is available under Releases.  This is a standalone file that can be used to run the Make Tiles and Make Mosaic functions on Windows machines.
