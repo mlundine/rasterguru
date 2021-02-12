@@ -7,6 +7,8 @@ The rationale is to do repetitive GIS tasks quickly.
 
 # Setup
 
+Download this repository, unzip it anywhere on your PC.  Or use git to clone it.
+
 To run in Anaconda, the requirements are python 3.7, pyqt5, gdal, pandas, simplekml, scikit-learn, opencv-python, numpy, matplotlib, pykml.
 
 Open up Anaconda prompt or terminal and cd to the rasterguru directory.
