@@ -19,7 +19,6 @@ import matplotlib.pyplot as plt
 from sklearn.cluster import KMeans
 import cv2
 from pykml import parser
-import pyproj
 #import supervised
 # =============================================================================
 # get coords and res will make a spreadsheet of the coordinates and resolution for a folder
