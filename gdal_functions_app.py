@@ -19,12 +19,28 @@ import matplotlib.pyplot as plt
 from sklearn.cluster import KMeans
 import cv2
 from pykml import parser
+import pyproj
 #import supervised
 # =============================================================================
 # get coords and res will make a spreadsheet of the coordinates and resolution for a folder
 # need to specify the folder with the DEMs and a .csv file path to save the DEMs' coordinates and resolutions
 # of DEMs, using arcpy.  
 # =============================================================================
+    
+def gdal_open(image_path):
+    ### read in image to classify with gdal
+    driverTiff = gdal.GetDriverByName('GTiff')
+    input_raster = gdal.Open(image_path)
+    nbands = input_raster.RasterCount
+    prj = input_raster.GetProjection()
+    gt = input_raster.GetGeoTransform()
+    ### create an empty array, each column of the empty array will hold one band of data from the image
+    ### loop through each band in the image nad add to the data array
+    data = np.empty((input_raster.RasterYSize, input_raster.RasterXSize, nbands))
+    for i in range(1, nbands+1):
+        band = input_raster.GetRasterBand(i).ReadAsArray()
+        data[:, :, i-1] = band
+    return data, prj, gt
 def gdal_get_coords_and_res(folder, saveFile):
     """
     Takes a folder of geotiffs and outputs a csv with bounding box coordinates and x and y resolution
@@ -219,6 +235,29 @@ def getMatchingExtentAndRes(rasterToResize, resizerRaster):
     math_ds = None
     dst = None
     return(dst_filename)
+def assign_projection(unassigned, assigned, save_path, dtype=gdal.GDT_UInt16):
+    unassigned = gdal_open(unassigned)[0]
+    rasterY,rasterX,nbands = np.shape(unassigned)
+    print(rasterY,rasterX,nbands)
+    print(np.shape(unassigned))
+    assigned = gdal.Open(assigned)
+    gt = assigned.GetGeoTransform()
+    prj = assigned.GetProjection()
+    print(gt)
+    driverTiff = gdal.GetDriverByName('GTiff')
+    new = driverTiff.Create(save_path, rasterX, rasterY, nbands, dtype)
+    print(new)
+    new.SetGeoTransform(gt)
+    srs = osr.SpatialReference()
+    srs.ImportFromWkt(prj)
+    new.SetProjection(srs.ExportToWkt())
+    for i in range(1,nbands+1):
+        new.GetRasterBand(i).SetNoDataValue(-9999)
+        new.GetRasterBand(i).WriteArray(unassigned[:,:,i-1])    
+    unassigned = None
+    assigned = None
+    new = None
+
 
 def write_gtiff(array, gdal_obj, outputpath, dtype=gdal.GDT_UInt16, options=0, color_table=0, nbands=1, nodata=False):
     """
@@ -855,6 +894,8 @@ def kmeans_batch(inFolder, numClasses, noDataVal, outFolder, detect=False):
     noDataVal: the value for nodata in the rasters
     outFolder: path to the output folder
     """
+    for image in glob.glob(inFolder + '/*.tiff'):
+        kmeans(image, numClasses, True, noDataVal, False, save_folder=outFolder, detect = detect)
     for image in glob.glob(inFolder + '/*.tif'):
         kmeans(image, numClasses, True, noDataVal, False, save_folder=outFolder, detect = detect)
     for image in glob.glob(inFolder + '/*.img'):
@@ -1025,3 +1066,65 @@ def batchPNGtoGeotiff(folder):
         out = base + '.tif'
         pngToGeotiff(image, kml, out)
 
+def pointConversion(points_path, system_in, system_out, x_col, y_col,name_col=None,z_col=None):
+    """
+    takes a csv of geo-coordinates and converts to specified coordinate system
+    inputs:
+    points_path (str): csv with all of the coordinates
+    system_in (int): epsg code for import coordinate system (WGS84 = 4326)
+    system_out (int): epsg code for output coordinate system (WGS84/UTM18N = 32618) 
+    x_col (int): int for the index of the column with x-coords
+    y_col (int): int for the index of the column with y-coords
+    optional inputs:
+    z_col (int): int for the index of the column with z-coords
+    name_col (int): int for the index of the column with coordinate names
+    """
+    points = pd.read_csv(points_path)
+    InSR = osr.SpatialReference()
+    InSR.ImportFromEPSG(system_in)       
+    OutSR = osr.SpatialReference()
+    OutSR.ImportFromEPSG(system_out)
+    out_y = np.zeros(len(points))
+    out_x = np.zeros(len(points))
+    if name_col != None:
+        names = [None]*len(points)
+    if z_col != None:
+        out_z = np.zeros(len(points))
+    for i in range(len(points)):
+        Point = ogr.Geometry(ogr.wkbPoint)
+        inX = points.iloc[i,x_col]
+        inY = points.iloc[i,y_col]
+        if name_col != None:
+            name = points.iloc[i,name_col]
+            names[i] = name
+        if z_col != None:
+            inZ = points.iloc[i,z_col]
+            Point.AddPoint(inY, inX, z=inZ)
+        else:
+            Point.AddPoint(inY, inX)
+        sys_in = osr.SpatialReference()
+        sys_out = osr.SpatialReference()
+        sys_in.ImportFromEPSG(system_in)
+        sys_out.ImportFromEPSG(system_out)
+        Point.AssignSpatialReference(sys_in)    
+        Point.TransformTo(sys_out)
+        out_x[i] = Point.GetX()
+        out_y[i] = Point.GetY()
+        if z_col!=None:
+            out_z[i] = Point.GetZ()
+        Point = None
+    if name_col == None and z_col == None:
+        out_df = {'x':out_x, 'y':out_y}
+    if name_col != None and z_col != None:
+        out_df = {'name':names, 'x':out_x, 'y':out_y, 'z':out_z}
+    if name_col!=None and z_col==None:
+        out_df = {'name':names, 'x':out_x, 'y':out_y}
+    if name_col==None and z_col!=None:
+        out_df = {'x':out_x, 'y':out_y, 'z':out_z}
+
+    out_df = pd.DataFrame(out_df)
+    out_path = os.path.splitext(points_path)[0] + 'convert_to_' + str(system_out) + '.csv'
+    out_df.to_csv(out_path, index=False)
+
+        
+    
