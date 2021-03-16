@@ -59,7 +59,13 @@ people trying to learn how to work with GDAL and OGR.
 
 # Running the Standalone Executable on a Windows Machine
 
-An executable, RasterGuru.exe is available under Releases.  This is a standalone file that can be used to run the Make Tiles and Make Mosaic functions on Windows machines.
+An executable, RasterGuru.exe is available under [Releases](https://github.com/mlundine/rasterguru/releases).  
+
+Version 1 is a standalone file that can be used to run the Make Tiles and Make Mosaic functions on Windows machines.
+
+Version 2 is a standalone executable that runs every function detailed in the Readme. 
+
+Double click on whichever exe you download and it will run.  Takes a minute to initialize.
 
 # Making Tiles
 
