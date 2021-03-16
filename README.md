@@ -5,7 +5,7 @@ The rationale is to do repetitive GIS tasks quickly.
 
 ![GUI PIC](https://github.com/mlundine/rasterguru/blob/master/rastergu_gui.png)
 
-# Setup
+# Anaconda Setup
 
 Download this repository, unzip it anywhere on your PC.  Or use git to clone it.
 
