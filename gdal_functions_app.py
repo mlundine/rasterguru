@@ -39,6 +39,7 @@ def gdal_open(image_path):
     for i in range(1, nbands+1):
         band = input_raster.GetRasterBand(i).ReadAsArray()
         data[:, :, i-1] = band
+    input_raster = None
     return data, prj, gt
 def gdal_get_coords_and_res(folder, saveFile):
     """
@@ -1125,5 +1126,19 @@ def pointConversion(points_path, system_in, system_out, x_col, y_col,name_col=No
     out_path = os.path.splitext(points_path)[0] + 'convert_to_' + str(system_out) + '.csv'
     out_df.to_csv(out_path, index=False)
 
-        
+def delete_empty_images(path_to_folder):
+    """
+    deletes geotiffs that are all zeros, good for cleaning up tiling results
+    inputs:
+    path_to_folder (str): filepath to the folder with images that you want to delete
+    """
+    for image in glob.glob(path_to_folder + '/*.tif'):
+        array = gdal_open(image)[0]
+        no_data = len(np.unique(array))
+        if no_data < 5:
+            print('deleting ' + image)
+            cmd = 'gdalmanage delete ' + image
+            os.system(cmd)
+        array = None
+            
     

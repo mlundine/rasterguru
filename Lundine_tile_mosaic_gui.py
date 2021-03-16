@@ -76,6 +76,9 @@ class Window(QMainWindow):
         overlap.setMaximum(5000)
         self.vbox.addWidget(overlap, 1, 2)
 
+        deleter = QPushButton('Delete Null Tiles')
+        self.vbox.addWidget(deleter, 0, 3)
+
         converter = QPushButton('Convert Rasters')
         self.vbox.addWidget(converter, 4, 0)
         fromType = QComboBox()
@@ -203,7 +206,7 @@ class Window(QMainWindow):
         mergeShapefiles.clicked.connect(lambda: self.mergeShapefilesButton(shape.text()))
         multiband.clicked.connect(lambda: self.multibandButton(numBands.value()))
         virtualRaster.clicked.connect(lambda: self.virtualRasterButton())
-        
+        deleter.clicked.connect(lambda: self.deleterButton())
 
         self.scroll.setVerticalScrollBarPolicy(Qt.ScrollBarAlwaysOn)
         self.scroll.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOn)
@@ -211,6 +214,13 @@ class Window(QMainWindow):
         self.scroll.setWidget(self.widget)
 
         self.setCentralWidget(self.scroll)
+
+    def deleterButton(self):
+        options1 = QFileDialog.Options()
+        options1 |= QFileDialog.DontUseNativeDialog
+        folderName1 = str(QFileDialog.getExistingDirectory(self, "Select Folder of Geotiffs"))
+        if folderName1:
+            gdal_functions_app.delete_empty_images(folderName1)
 
     def multibandButton(self, numBands):
         folder_list = []
